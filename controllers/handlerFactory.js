@@ -78,8 +78,7 @@ exports.getOne = (Model, PopulateOptions) =>
 exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
     // To Allow nested GET reviews on tour
-    let filter = {};
-    if (req.params.tourId) filter = { tour: req.params.tourId };
+    const filter = {};
 
     // Parse query properly to handle price[lt], duration[gte], etc.
     const parsedQuery = qs.parse(req.query);
