@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-const suretySchema = require('./suretyModel.js');
+const suretySchema = require('./suretyModel');
+const Transaction = require('./transactionModel');
 
 const customerSchema = new mongoose.Schema(
   {
@@ -18,7 +19,7 @@ const customerSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      unique: true,
+      // unique: true,
       required: [true, 'Mobile number required'],
       validate: {
         validator: function (value) {
@@ -39,12 +40,23 @@ const customerSchema = new mongoose.Schema(
       type: Date,
       default: Date.now(),
     },
+    lastInterestDate: {
+      type: Date,
+      default: function () {
+        return this.loanDate;
+      },
+    },
     paymentDue: Date,
     interestRate: {
       type: Number,
       require: [true, 'interest rate required'],
     },
-    balance: Number,
+    balance: {
+      type: Number,
+      default: function () {
+        return this.amount;
+      },
+    },
     active: {
       type: Boolean,
       default: true,
@@ -66,6 +78,41 @@ customerSchema.virtual('transactions', {
   localField: '_id',
 });
 
-const Customer = mongoose.model('Customer', customerSchema);
+customerSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } });
+});
 
+// 🔹 Middleware — must be before compiling model
+customerSchema.pre(/^find/, async function (next) {
+  if (this.getOptions().skipBalanceUpdate) return;
+
+  const balances = await Transaction.aggregate([
+    { $match: { customerID: { $exists: true } } },
+    {
+      $group: {
+        _id: '$customerID',
+        totalCredit: {
+          $sum: { $cond: [{ $eq: ['$type', 'Credit'] }, '$amount', 0] },
+        },
+        totalDebit: {
+          $sum: { $cond: [{ $eq: ['$type', 'Debit'] }, '$amount', 0] },
+        },
+      },
+    },
+    { $project: { balance: { $subtract: ['$totalCredit', '$totalDebit'] } } },
+  ]);
+
+  // When updating, skip middleware
+  await Promise.all(
+    balances.map((b) =>
+      this.model.findByIdAndUpdate(
+        b._id,
+        { balance: b.balance },
+        { skipBalanceUpdate: true },
+      ),
+    ),
+  );
+});
+
+const Customer = mongoose.model('Customer', customerSchema);
 module.exports = Customer;

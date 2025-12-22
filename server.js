@@ -2,6 +2,8 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
+const cronjob = require('./auto-jobs/monthly-interest.cron')
+
 process.on('uncaughtException', (err) => {
   console.log('Uncaught Exception...❌❌❌');
   const error = Object.create(err);
@@ -18,15 +20,9 @@ const DB = process.env.DATABASE.replace(
   process.env.DATABASE_PASSWORD,
 );
 
-mongoose
-  .connect(DB, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-  })
-  .then(() => {
-    console.log('DB Connected Successfully');
-  });
+mongoose.connect(DB).then(() => {
+  console.log('DB Connected Successfully');
+});
 
 // console.log(app.get('env'));
 // console.log(process.env);

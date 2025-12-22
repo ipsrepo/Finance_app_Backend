@@ -10,10 +10,24 @@ const transactionModel = new mongoose.Schema(
       type: Date,
       default: Date.now(),
     },
+    type: {
+      type: String,
+      required: [true, 'Transaction type is required'],
+      enum: {
+        values: ['Credit', 'Debit'],
+        message: 'Type should be Credit or Debit',
+      },
+      default: 'Credit',
+    },
     payPrinciple: {
       type: Boolean,
       default: false,
       select: false,
+    },
+    details: {
+      type: String,
+      default: 'Initial credit',
+      required: [true, 'Transaction details required'],
     },
     closingAccount: {
       type: Boolean,
