@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
     "debug": "ndb server.js",
+    "build": "node server.js",
     "debug:prod": "set NODE_ENV=production&& ndb server.js",
     "start:prod": "set NODE_ENV=production&& nodemon server.js"
   },
